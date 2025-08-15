@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spin & Earn</title>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+  body {
+    margin: 0;
+    background: #343A40;
+    font-family: 'Poppins', sans-serif;
+    color: white;
+    text-align: center;
+  }
+  
+  #ad-container {
+      width: 100%;
+      min-height: 90px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #212529;
+  }
+
+  /* Main content wrapper - FIXED */
+  #main-content {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      box-sizing: border-box;
+      /* min-height ensures it takes up at least this space but can grow */
+      min-height: calc(100vh - 90px); 
+  }
+
+  .spin-container {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+  }
+
+  .pointer {
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 20px solid transparent;
+    border-right: 20px solid transparent;
+    border-top: 35px solid #F39C12;
+    z-index: 10;
+    filter: drop-shadow(0 -5px 5px rgba(0,0,0,0.4));
+  }
+
+  #wheelCanvas {
+    border-radius: 50%;
+    box-shadow: 
+        inset 0 0 20px rgba(0, 0, 0, 0.6), 
+        0 10px 20px rgba(0, 0, 0, 0.4);
+    background: #495057;
+    transition: transform 6s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .spin-title {
+      font-size: 2.8rem;
+      font-weight: 600;
+      margin-bottom: 5px;
+      margin-top: 0;
+      color: #FFFFFF;
+      text-shadow: 0 0 10px rgba(171, 71, 188, 0.8), 0 0 20px rgba(171, 71, 188, 0.6);
+  }
+  
+  .spin-subtitle {
+      font-size: 1.1rem;
+      color: #CED4DA;
+      margin-bottom: 20px;
+  }
+
+  #spinCounter {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #f1c40f;
+      background: rgba(0,0,0,0.3);
+      padding: 5px 15px;
+      border-radius: 20px;
+      margin-top: 20px;
+  }
+
+  .button-container {
+      position: relative;
+      margin-top: 20px;
+      margin-bottom: 20px; /* Added some bottom margin */
+  }
+
+  button#spinBtn {
+    padding: 15px 40px;
+    font-size: 20px;
+    font-weight: 600;
+    border: none;
+    border-radius: 50px;
+    background: linear-gradient(45deg, #AB47BC, #8E24AA);
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 8px 15px rgba(0,0,0,0.3);
+    transition: all 0.2s ease-in-out;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    min-width: 200px;
+    text-align: center;
+  }
+
+  button#spinBtn:hover:not(:disabled) {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 12px 25px rgba(171, 71, 188, 0.4);
+  }
+
+  button#spinBtn:disabled {
+    background: linear-gradient(45deg, #787878, #545454);
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+
+  #cooldown-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      font-size: 22px;
+      font-weight: 600;
+      border-radius: 50px;
+      pointer-events: none;
+  }
+
+  .popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+    background: rgba(40, 40, 40, 0.7);
+    backdrop-filter: blur(15px);
+    padding: 30px 50px;
+    border-radius: 20px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.2);
+    text-align: center;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+  
+  .popup.active {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 1;
+      pointer-events: auto;
+  }
+
+  .popup h2 { margin: 0 0 15px; font-size: 28px; color: #F39C12; }
+  .popup p { font-size: 20px; margin: 0; }
+
+</style>
+</head>
+<body>
+
+<div id="ad-container">
+    <script type="text/javascript">
+        atOptions = {
+            'key' : '782ca409405d748bcccfe11145513dc8',
+            'format' : 'iframe',
+            'height' : 90,
+            'width' : 728,
+            'params' : {}
+        };
+    </script>
+    <script type="text/javascript" src="//www.highperformanceformat.com/782ca409405d748bcccfe11145513dc8/invoke.js"></script>
+</div>
+
+<div id="main-content">
+    <h1 class="spin-title">Spin & Earn</h1>
+    <p class="spin-subtitle">Spin the wheel to earn tokens</p>
+
+    <div class="spin-container">
+      <div class="pointer"></div>
+      <canvas id="wheelCanvas" width="350" height="350"></canvas>
+    </div>
+
+    <p id="spinCounter"></p>
+
+    <div class="button-container">
+        <button id="spinBtn">Spin!</button>
+        <div id="cooldown-overlay"></div>
+    </div>
+</div>
+
+<div id="popup" class="popup">
+  <h2 id="popupTitle">Congratulations!</h2>
+  <p id="resultText"></p>
+</div>
+
+<script>
+const canvas = document.getElementById('wheelCanvas');
+const ctx = canvas.getContext('2d');
+const spinBtn = document.getElementById('spinBtn');
+const popup = document.getElementById('popup');
+const popupTitle = document.getElementById('popupTitle');
+const resultText = document.getElementById('resultText');
+const spinCounterEl = document.getElementById('spinCounter');
+const cooldownOverlay = document.getElementById('cooldown-overlay');
+
+const adUrl = 'https://www.profitableratecpm.com/rqkvjsjv?key=e31e36afd5b4356856c1813759fbb1ed';
+const DAILY_SPIN_LIMIT = 10;
+const COOLDOWN_MINUTES = 2;
+
+const sections = ['10', '500', 'TRY AGAIN', '200', '100', '50'];
+const sectionColors = ["#8E24AA", "#AB47BC", "#BA68C8", "#CE93D8", "#E1BEE7", "#F3E5F5"];
+const radius = canvas.width / 2;
+const arcSize = (2 * Math.PI) / sections.length;
+let currentAngle = 0;
+let isSpinning = false;
+let cooldownInterval;
+
+const getTodayString = () => new Date().toISOString().slice(0, 10);
+
+const updateSpinCounterUI = (spinsLeft) => {
+    spinCounterEl.textContent = `Spins Left Today: ${spinsLeft} / ${DAILY_SPIN_LIMIT}`;
+};
+
+const startCooldown = (initialTime) => {
+    let cooldownTime = initialTime;
+    spinBtn.disabled = true;
+    cooldownOverlay.style.display = 'flex';
+
+    cooldownInterval = setInterval(() => {
+        if (cooldownTime <= 0) {
+            clearInterval(cooldownInterval);
+            spinBtn.disabled = false;
+            cooldownOverlay.style.display = 'none';
+            localStorage.removeItem('cooldownEndTime');
+        } else {
+            const minutes = Math.floor(cooldownTime / 60);
+            const seconds = (cooldownTime % 60).toString().padStart(2, '0');
+            cooldownOverlay.textContent = `${minutes}:${seconds}`;
+            cooldownTime--;
+        }
+    }, 1000);
+};
+
+const initializeApp = () => {
+    const lastVisitDate = localStorage.getItem('lastVisitDate');
+    const today = getTodayString();
+    let spinsLeft;
+
+    if (lastVisitDate !== today) {
+        spinsLeft = DAILY_SPIN_LIMIT;
+        localStorage.setItem('spinsLeft', spinsLeft);
+        localStorage.setItem('lastVisitDate', today);
+        localStorage.removeItem('cooldownEndTime');
+    } else {
+        spinsLeft = parseInt(localStorage.getItem('spinsLeft'), 10) || 0;
+    }
+
+    updateSpinCounterUI(spinsLeft);
+    drawWheel();
+
+    const cooldownEndTime = localStorage.getItem('cooldownEndTime');
+    if (cooldownEndTime && Date.now() < cooldownEndTime) {
+        const remainingTime = Math.round((cooldownEndTime - Date.now()) / 1000);
+        if (remainingTime > 0) {
+            startCooldown(remainingTime);
+        }
+    } else if (spinsLeft <= 0) {
+        spinBtn.textContent = "No Spins Left";
+        spinBtn.disabled = true;
+    }
+};
+
+const drawWheel = () => {
+    for (let i = 0; i < sections.length; i++) {
+        const startAngle = i * arcSize;
+        ctx.beginPath();
+        ctx.fillStyle = sectionColors[i];
+        ctx.moveTo(radius, radius);
+        ctx.arc(radius, radius, radius, startAngle, startAngle + arcSize);
+        ctx.closePath();
+        ctx.fill();
+        ctx.save();
+        ctx.translate(radius, radius);
+        ctx.rotate(startAngle + arcSize / 2);
+        ctx.textAlign = "right";
+        ctx.fillStyle = i < 3 ? "#FFFFFF" : "#4A148C";
+        ctx.font = "bold 20px Poppins";
+        ctx.fillText(sections[i], radius - 20, 10);
+        ctx.restore();
+    }
+};
+
+const showPopup = (message, title) => {
+    resultText.innerText = message;
+    popupTitle.innerText = title;
+    popup.classList.add('active');
+    
+    setTimeout(() => {
+        popup.classList.remove('active');
+    }, 4000);
+};
+
+spinBtn.addEventListener('click', () => {
+    if (isSpinning || spinBtn.disabled) return;
+
+    let spinsLeft = parseInt(localStorage.getItem('spinsLeft'), 10);
+    if (spinsLeft <= 0) {
+        showPopup("You have no spins left for today.", "Limit Reached");
+        return;
+    }
+
+    window.open(adUrl, '_blank');
+
+    spinsLeft--;
+    localStorage.setItem('spinsLeft', spinsLeft);
+    updateSpinCounterUI(spinsLeft);
+
+    isSpinning = true;
+    spinBtn.disabled = true;
+
+    const spinAngle = (Math.random() * 360) + (360 * 6);
+    const totalAngle = currentAngle + spinAngle;
+    const spinDuration = 6;
+    canvas.style.transition = `transform ${spinDuration}s cubic-bezier(0.2, 0.8, 0.2, 1)`;
+    canvas.style.transform = `rotate(${totalAngle}deg)`;
+
+    setTimeout(() => {
+        isSpinning = false;
+        
+        const finalAngle = totalAngle % 360;
+        const pointerAngle = 270;
+        const adjustedAngle = (360 - finalAngle + pointerAngle) % 360;
+        const prizeIndex = Math.floor(adjustedAngle / (360 / sections.length));
+        const prize = sections[prizeIndex];
+        
+        showPopup(
+            prize === 'TRY AGAIN' ? 'Better luck next time!' : `You won: ${prize} tokens!`,
+            prize === 'TRY AGAIN' ? 'Oh No!' : 'Congratulations!'
+        );
+        
+        currentAngle = totalAngle % 360;
+
+        if (spinsLeft > 0) {
+            const cooldownEndTime = Date.now() + (COOLDOWN_MINUTES * 60 * 1000);
+            localStorage.setItem('cooldownEndTime', cooldownEndTime);
+            startCooldown(COOLDOWN_MINUTES * 60);
+        } else {
+            spinBtn.textContent = "No Spins Left";
+            spinBtn.disabled = true;
+            localStorage.removeItem('cooldownEndTime');
+        }
+    }, spinDuration * 1000 + 100);
+});
+
+initializeApp();
+</script>
+</body>
+</html>
