@@ -212,7 +212,6 @@
 </div>
 
 <script>
-// JavaScript code me koi badlav nahi hai, isliye wahi rahega.
 const canvas = document.getElementById('wheelCanvas');
 const ctx = canvas.getContext('2d');
 const spinBtn = document.getElementById('spinBtn');
@@ -352,11 +351,18 @@ spinBtn.addEventListener('click', () => {
         const adjustedAngle = (360 - finalAngle + pointerAngle) % 360;
         const prizeIndex = Math.floor(adjustedAngle / (360 / sections.length));
         const prize = sections[prizeIndex];
-        
-        showPopup(
-            prize === 'TRY AGAIN' ? 'Better luck next time!' : `You won: ${prize} tokens!`,
-            prize === 'TRY AGAIN' ? 'Oh No!' : 'Congratulations!'
-        );
+
+        // --- YAHAN BADLAV KIYA GAYA HAI ---
+        if (prize !== 'TRY AGAIN') {
+            const amountWon = parseInt(prize, 10);
+            // Parent window/app ko message bhejen
+            window.parent.postMessage({ type: 'EARN_TOKENS', amount: amountWon }, '*');
+            
+            showPopup(`You won: ${prize} tokens!`, 'Congratulations!');
+        } else {
+            showPopup('Better luck next time!', 'Oh No!');
+        }
+        // --- BADLAV KHATAM ---
         
         currentAngle = totalAngle % 360;
 
